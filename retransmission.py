@@ -112,7 +112,7 @@ class TelemetryRetransmission:
 
 if __name__ == "__main__":
     # Define configuration
-    ROVER_IP = "0.0.0.0"  # Listen on all interfaces
+    ROVER_IP = "127.0.0.1"
     ROVER_PORT = 50055
     EARTH_IP = "127.0.0.1"  # Replace with the actual mission control IP
     EARTH_PORT = 60066
