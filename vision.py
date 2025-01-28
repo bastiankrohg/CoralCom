@@ -12,6 +12,7 @@ from pycoral.adapters.detect import get_objects
 from pycoral.utils.dataset import read_label_file
 from pycoral.utils.edgetpu import make_interpreter, run_inference
 
+from flask_streamer import FlaskMJPEGStreamer
 
 VIDEO_SOURCE = "http://192.168.0.169:8080/stream"
 
@@ -82,42 +83,45 @@ class VisionSystem:
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, thickness)
         return frame
 
-    def start(self):
+    def start(self, enable_stream=False, stream_port=8081):
+        """ 
+        Run inference and optionally start an MJPEG stream.
+
+        Args:
+            enable_stream (bool): Whether to start the Flask-based MJPEG streamer.
+            stream_port (int): The port for the MJPEG stream (if enabled).
+        """
+        streamer = None
         try:
+            if enable_stream:
+                streamer = FlaskMJPEGStreamer(self, port=stream_port)
+                streamer.start_stream()
+                print(f"Flask MJPEG stream available at http://{streamer.host}:{stream_port}/stream")
+
             while True:
                 frame, detections = self.run_inference()
                 self.send_results(detections)
 
-                # Annotate frame
-                annotated_frame = self.annotate_frame(frame, detections)
-
                 # Save frame to disk for debugging
                 output_path = f"output_frame.jpg"
-                cv2.imwrite(output_path, annotated_frame)
-
-                # Stream frame if enabled
-                if self.enable_stream and self.stream_writer:
-                    self.stream_writer.write(annotated_frame)
-
+                cv2.imwrite(output_path, frame)
+        except KeyboardInterrupt:
+            print("Shutting down VisionSystem...")
         finally:
             self.camera.release()
-            if self.stream_writer:
-                self.stream_writer.release()
-
+            if streamer:    
+                streamer.stop()
 
 if __name__ == "__main__":
-    # Argument parser
-    parser = argparse.ArgumentParser(description="Run vision system with optional streaming.")
-    parser.add_argument("--stream", action="store_true", help="Enable streaming of annotated frames via GStreamer.")
+    parser = argparse.ArgumentParser(description="Run vision system with optional MJPEG streaming.")
+    parser.add_argument("--stream", action="store_true", help="Enable MJPEG streaming of annotated frames.")
+    parser.add_argument("--stream_port", type=int, default=8081, help="Port for MJPEG stream (default: 8081).")
     args = parser.parse_args()
 
-    # Paths and settings
     MODEL_PATH = "Lan_test_3/tf2_ssd_mobilenet_v2_coco17_ptq_edgetpu.tflite"
     LABEL_PATH = "Lan_test_3/labels.txt"
     UDP_IP = "192.168.1.100"
     UDP_PORT = 5005
 
-    # Initialize and start the vision system
-    vision_system = VisionSystem(MODEL_PATH, LABEL_PATH, UDP_IP, UDP_PORT, enable_stream=args.stream)
-    vision_system.start()
-    
+    vision_system = VisionSystem(MODEL_PATH, LABEL_PATH, UDP_IP, UDP_PORT)
+    vision_system.start(enable_stream=args.stream, stream_port=args.stream_port)
