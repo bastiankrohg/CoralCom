@@ -20,7 +20,8 @@ class VisionSystem:
     def __init__(self, model_path, label_path, udp_ip, udp_port, enable_stream=False, stream_host="192.168.0.169", stream_port=5000):
         self.labels = load_labels(label_path)
         self.interpreter = initialize_interpreter(model_path)
-        self.inference_size = (300, 300)  # Adjust this based on your model's input size
+        #self.inference_size = (300, 300) 
+        self.inference_size = (640, 480)
 
         # UDP settings
         self.udp_ip = udp_ip
