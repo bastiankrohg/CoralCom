@@ -122,7 +122,8 @@ if __name__ == "__main__":
     MODEL_PATH = "Lan_test_3/tf2_ssd_mobilenet_v2_coco17_ptq_edgetpu.tflite"
     LABEL_PATH = "Lan_test_3/labels.txt"
     UDP_IP = "192.168.1.100"
-    UDP_PORT = 5005
-
+    #UDP_PORT = 5005
+    UDP_PORT = 60010
+    
     vision_system = VisionSystem(MODEL_PATH, LABEL_PATH, UDP_IP, UDP_PORT)
     vision_system.start(enable_stream=args.stream, stream_port=args.stream_port)
